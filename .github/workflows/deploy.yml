@@ -1,0 +1,44 @@
+name : Deploy to WPA
+on : 
+  push : 
+    branches :  
+      - main
+jobs: 
+  deploy: 
+    runs-on : ubuntu-latest
+    steps: 
+      - name : Checkout-repository
+        uses : actions/checkout@v4
+
+      - name : Setup SSH key
+        run: 
+          mkdir -p ~/.ssh
+          echo "${{secrets.SSH_private_key}} > ~/.ssh/id_rsa"
+          chmod 600  ~/.ssh/id_rsa
+        shell : bash
+
+      - name: Deploy to server
+        env : 
+          HOST : ${{secrets.HOST}}
+          USER : ${{secrets.USER}}
+          APP_DIR : /ci_cd
+          PORT : ${{secrets.PORT}}
+
+        run : 
+          ssh-keyscan -H $HOST > ~/.ssh/known_host
+          ssh $USER@HOST " 
+          if [ ! -d $AAP_DIR], then
+            mkdir -p APP_DIR"
+            git clone https://github.com/javohirbackendDeveloper/ci_cd_lesson $APP_DIR
+          else 
+            cd $APP_DIR
+            git pull origin main
+          fi
+
+          cd $APP_DIR
+          echo `PORT=${PORT} > .env
+          npm install 
+          npm run build
+
+          if pm2 list | grep -q 'ci_cd_app'; then 
+            pm2 retart ci_cd_app
